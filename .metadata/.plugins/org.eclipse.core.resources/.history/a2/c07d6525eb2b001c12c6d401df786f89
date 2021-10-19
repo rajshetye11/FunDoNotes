@@ -1,0 +1,19 @@
+package com.bridgelabz.fundonotes.service;
+
+import org.springframework.stereotype.Service;
+
+import com.bridgelabz.fundonotes.dto.LoginDto;
+import com.bridgelabz.fundonotes.dto.UpdatePasswordDto;
+import com.bridgelabz.fundonotes.dto.UserDto;
+import com.bridgelabz.fundonotes.entity.User;
+
+@Service
+public interface ServiceLayer {
+	
+	public User register(UserDto userDto);
+	public String login(LoginDto loginDto);
+	public void verifyEmail(String token);
+	public void forgotPassword(String email);
+	public void resetPassword(String newPassword, String token);
+	public void updatePassword(String token, UpdatePasswordDto updatePasswordDto);
+}

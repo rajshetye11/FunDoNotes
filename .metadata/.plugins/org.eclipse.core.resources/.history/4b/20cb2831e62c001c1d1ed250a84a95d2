@@ -1,0 +1,132 @@
+package com.bridgelabz.fundonotes.service;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+
+import com.bridgelabz.fundonotes.Exception.FunDoNotesCutomException;
+import com.bridgelabz.fundonotes.dto.NoteDto;
+import com.bridgelabz.fundonotes.entity.Label;
+import com.bridgelabz.fundonotes.entity.Note;
+import com.bridgelabz.fundonotes.entity.User;
+import com.bridgelabz.fundonotes.repo.LabelRepository;
+import com.bridgelabz.fundonotes.repo.NoteRepository;
+import com.bridgelabz.fundonotes.repo.RepositoryLayer;
+import com.bridgelabz.fundonotes.utils.TokenService;
+
+@Service
+public class INoteService implements NoteService {
+	
+	@Autowired
+	TokenService tokenService;
+	
+	@Autowired
+	RepositoryLayer repositoryLayer;
+	
+	@Autowired
+	NoteRepository noteRepository;
+	
+	@Autowired
+	LabelRepository labelRepository;
+	
+	@Override
+	public Note createNote(NoteDto nodeDto ,String token) {
+		User user = repositoryLayer.findById(tokenService.decodeToken(token)).orElseThrow( 
+					() -> new FunDoNotesCutomException(HttpStatus.BAD_REQUEST,"User Not found for creating note"));
+		Note note = new Note();
+		BeanUtils.copyProperties(nodeDto, note);
+		noteRepository.save(note);
+		user.getNotes().add(note);
+		repositoryLayer.save(user);
+		return note;
+	}
+
+	@Override
+	public List<Note> viewNotes(String token) {
+		User user = repositoryLayer.findById(tokenService.decodeToken(token)).orElseThrow( 
+				() -> new FunDoNotesCutomException(HttpStatus.BAD_REQUEST,"User Not found for creating note"));
+		List<Note> notes = user.getNotes().stream().filter(note -> note.getIsTrashed().equals(false)).collect(Collectors.toList());
+		return notes;		
+	}
+	
+	@Override
+	public void pinNote(String token, int noteId) {
+		User user = repositoryLayer.findById(tokenService.decodeToken(token)).orElseThrow( 
+				() -> new FunDoNotesCutomException(HttpStatus.BAD_REQUEST,"User Not found for creating note"));
+		Note note = noteRepository.findById(noteId).orElseThrow( () -> new FunDoNotesCutomException(HttpStatus.BAD_REQUEST," Note not found"));
+		if (note.getIsPinned()) {
+			note.setIsPinned(false);
+		}
+		else {
+			note.setIsPinned(true);
+		}
+		repositoryLayer.save(user);
+	}
+	
+	@Override
+	public void archieveNote(String token, int noteId) {
+		User user = repositoryLayer.findById(tokenService.decodeToken(token)).orElseThrow( 
+				() -> new FunDoNotesCutomException(HttpStatus.BAD_REQUEST,"User Not found for creating note"));
+		Note notes = user.getNotes().stream().filter(note -> Integer.valueOf(note.getId()).equals(noteId)).findAny().orElseThrow(
+				() -> new FunDoNotesCutomException(HttpStatus.BAD_REQUEST,"User Not found for creating note"));
+		if (notes.getIsArchived()) {
+			notes.setIsArchived(false);
+		}
+		else {
+			notes.setIsArchived(true);
+		}
+		repositoryLayer.save(user);
+	}
+	
+	@Override
+	public String deleteNote(String token, int noteId) {
+		User user = repositoryLayer.findById(tokenService.decodeToken(token)).orElseThrow( 
+				() -> new FunDoNotesCutomException(HttpStatus.BAD_REQUEST,"User Not found for creating note"));
+		Note notes = user.getNotes().stream().filter(note -> Integer.valueOf(note.getId()).equals(noteId)).findAny().orElseThrow(
+					() -> new FunDoNotesCutomException(HttpStatus.BAD_REQUEST,"User Not found for creating note"));	
+		if(notes.getIsTrashed()) {
+			noteRepository.delete(notes);
+			return "Deleted succesfully";
+		}
+		else {
+			return "First move to trash";
+		}
+	}
+	
+	@Override
+	public String addLabelToNote(String token, int noteId, String labelName) {
+      
+		User user = repositoryLayer.findById(tokenService.decodeToken(token)).orElseThrow( 
+				() -> new FunDoNotesCutomException(HttpStatus.BAD_REQUEST,"User Not found for adding a label"));
+		Note notes = user.getNotes().stream().filter(note -> Integer.valueOf(note.getId()).equals(noteId)).findAny().orElseThrow(
+					() -> new FunDoNotesCutomException(HttpStatus.BAD_REQUEST,"User Not found for adding a labeL"));
+		Label label = labelRepository.findByLabelName(labelName);
+		if(label == null)
+			throw new FunDoNotesCutomException(HttpStatus.BAD_REQUEST,"Label is not present, First make a label ");
+
+		notes.getLabels().add(label);
+		noteRepository.save(notes);
+		return "Added label Succesfully";
+	}
+	
+	@Override
+	public String deleteLabelFromNote(String token, int noteId, String labelName) {
+		
+		User user = repositoryLayer.findById(tokenService.decodeToken(token)).orElseThrow( 
+				() -> new FunDoNotesCutomException(HttpStatus.BAD_REQUEST,"User Not found for adding a label"));
+		Note notes = user.getNotes().stream().filter(note -> Integer.valueOf(note.getId()).equals(noteId)).findAny().orElseThrow(
+					() -> new FunDoNotesCutomException(HttpStatus.BAD_REQUEST,"User Not found for adding a labeL"));	
+		Label label = labelRepository.findByLabelName(labelName);
+		if(label == null)
+			throw new FunDoNotesCutomException(HttpStatus.BAD_REQUEST,"Label name incorrect");
+
+		notes.getLabels().remove(label);
+		noteRepository.save(notes);
+		return "Label Deleted Succesfully";
+	}
+
+}

@@ -1,0 +1,9 @@
+package com.fundouser.config;
+
+@Configuration
+public class PasswordEncoderConfig {
+	@Bean
+	public PasswordEncoder pass() {
+		return new BCryptPasswordEncoder();
+	}
+}

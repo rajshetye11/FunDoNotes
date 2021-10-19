@@ -1,0 +1,69 @@
+package com.fundouser.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.bridgelabz.fundonotes.dto.LoginDto;
+import com.bridgelabz.fundonotes.dto.UpdatePasswordDto;
+import com.bridgelabz.fundonotes.dto.UserDto;
+import com.bridgelabz.fundonotes.entity.User;
+import com.bridgelabz.fundonotes.response.ResponseDto;
+import com.bridgelabz.fundonotes.service.IServiceLayer;
+
+@RestController
+public class usercontroller {
+	
+	@Autowired
+	IServiceLayer serviceLayer;	
+	
+	@PostMapping("/register")
+	public ResponseEntity<ResponseDto> post(@RequestBody UserDto userDto ) {
+		User user = serviceLayer.register(userDto);
+		ResponseDto responseDto = new ResponseDto("Added succesfully",user);
+		return new ResponseEntity<ResponseDto>(responseDto,HttpStatus.OK);
+	}
+	
+	@PostMapping("/login")
+	public ResponseEntity<ResponseDto> login(@RequestBody LoginDto loginDto) {
+		String token = serviceLayer.login(loginDto);
+		ResponseDto responseDto = new ResponseDto("LoggedIn succesfully",token);
+		return new ResponseEntity<ResponseDto>(responseDto,HttpStatus.OK);
+	}
+	
+	@GetMapping("/verify/{token}")
+	public ResponseEntity<ResponseDto> verifyEmail(@PathVariable(value = "token") String token) {
+		serviceLayer.verifyEmail(token);
+		ResponseDto responseDto = new ResponseDto("User email verified","");
+		return new ResponseEntity<ResponseDto>(responseDto,HttpStatus.OK);
+	}
+	
+	@GetMapping("/forgot/{email}")
+	public ResponseEntity<ResponseDto> forgotPassword(@PathVariable String email) {
+		serviceLayer.forgotPassword(email);
+		ResponseDto responseDto = new ResponseDto("For got password succesfull",email);
+		return new ResponseEntity<ResponseDto>(responseDto,HttpStatus.OK);
+	}
+	
+	@PutMapping("/reset")
+	public ResponseEntity<ResponseDto> resetEmail(@RequestHeader String token, @RequestParam String newPassword) {
+		serviceLayer.resetPassword(newPassword, token);
+		ResponseDto responseDto = new ResponseDto("Reset password succesfull","");
+		return new ResponseEntity<ResponseDto>(responseDto,HttpStatus.OK);
+	}
+	
+	@PutMapping("/updatePassword")
+	public ResponseEntity<ResponseDto> updatePassword(@RequestHeader String token, @RequestBody UpdatePasswordDto updatePasswordDto) {
+		serviceLayer.updatePassword(token,updatePasswordDto);
+		ResponseDto responseDto = new ResponseDto("Reset password succesfull","");
+		return new ResponseEntity<ResponseDto>(responseDto,HttpStatus.OK);
+	}
+}

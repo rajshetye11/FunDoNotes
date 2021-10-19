@@ -1,0 +1,5 @@
+package com.fundouser.repository;
+
+public class UserRepo {
+
+}

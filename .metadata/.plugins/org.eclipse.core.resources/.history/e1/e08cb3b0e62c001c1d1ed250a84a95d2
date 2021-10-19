@@ -1,0 +1,70 @@
+package com.fundonotes.service;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+
+import com.bridgelabz.fundonotes.Exception.FunDoNotesCutomException;
+import com.bridgelabz.fundonotes.entity.Label;
+import com.bridgelabz.fundonotes.entity.User;
+import com.bridgelabz.fundonotes.repo.LabelRepository;
+import com.bridgelabz.fundonotes.repo.RepositoryLayer;
+import com.bridgelabz.fundonotes.utils.TokenService;
+
+@Service
+public class ILabelService implements LabelService {
+	
+	@Autowired
+	private TokenService tokenService;
+	
+	@Autowired
+	private LabelRepository labelRepository;
+	
+	@Override
+	public Label createLable(String token, String labelName) {
+		User user = repositoryLayer.findById(tokenService.decodeToken(token)).orElseThrow(
+				() -> new FunDoNotesCutomException(HttpStatus.BAD_REQUEST,"User not found for creating label"));
+		Label label = labelRepository.findByLabelName(labelName);
+		if (label != null) {
+			throw new FunDoNotesCutomException(HttpStatus.CONFLICT, "Label Name already presntn");
+		}
+		Label label1 = new Label();
+		label1.setLabelName(labelName);
+		labelRepository.save(label1);
+		user.getLabels().add(label1);
+		repositoryLayer.save(user);
+		
+		return label1;
+	}
+	
+	@Override
+	public List<Label> displayAllLabels(String token){
+		User user = repositoryLayer.findById(tokenService.decodeToken(token)).orElseThrow(
+				() -> new FunDoNotesCutomException(HttpStatus.BAD_REQUEST,"User not found for creating label"));
+		List<Label> labels = user.getLabels();
+		return labels;
+	}
+	
+	@Override
+	public void deleteLabel(String token, int labelId) {
+		User user = repositoryLayer.findById(tokenService.decodeToken(token)).orElseThrow(
+				() -> new FunDoNotesCutomException(HttpStatus.BAD_REQUEST,"User not found for creating label"));
+		Label label = user.getLabels().stream().filter(labels -> Integer.valueOf(labels.getId()).equals(labelId)).findAny().orElseThrow(
+				() -> new FunDoNotesCutomException(HttpStatus.BAD_REQUEST,"User Not found for deleting label"));
+		labelRepository.delete(label);
+	}
+	
+	@Override
+	public Label updateLabel(String token, int labelId, String labelName) {
+		User user = repositoryLayer.findById(tokenService.decodeToken(token)).orElseThrow(
+				() -> new FunDoNotesCutomException(HttpStatus.BAD_REQUEST,"User not found for creating label"));
+		Label label = user.getLabels().stream().filter(labels -> Integer.valueOf(labels.getId()).equals(labelId)).findAny().orElseThrow(
+				() -> new FunDoNotesCutomException(HttpStatus.BAD_REQUEST,"User Not found for deleting label"));
+		label.setLabelName(labelName);
+		labelRepository.save(label);
+		return label;
+	}
+
+}

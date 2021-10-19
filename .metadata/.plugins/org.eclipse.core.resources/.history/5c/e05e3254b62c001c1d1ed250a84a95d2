@@ -1,0 +1,5 @@
+package com.fundouser.config;
+
+public class RestTemplateConfig {
+
+}
